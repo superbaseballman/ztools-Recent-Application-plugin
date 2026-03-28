@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/@ztools-center/ztools-api-types/resource/ztools.schema.json",
+  "name": "lightningbox",
+  "title": "闪电启动",
+  "description": "快捷启动应用、网址、文件夹、文档",
+  "author": "superbaseballman",
+  "version": "1.0.0",
+  "main": "index.html",
+  "preload": "preload/services.js",
+  "logo": "logo.png",
+  "development": {
+    "main": "http://localhost:5173"
+  },
+  "features": [
+    {
+      "code": "lightningbox",
+      "explain": "闪电启动 - 快捷启动应用、网址、文件夹、文档",
+      "icon": "logo.png",
+      "cmds": ["闪电启动", "闪电盒子", "launch"]
+    }
+  ]
+}

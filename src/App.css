@@ -1,0 +1,24 @@
+.debug-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.debug-page p {
+  margin: 8px 0;
+}
+
+.debug-page .hint {
+  color: #4a90d9;
+}
+
+.debug-page .route-info {
+  color: #888;
+  font-size: 12px;
+  margin-top: 20px;
+}
