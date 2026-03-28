@@ -21,7 +21,7 @@ interface FavoritesProps {
   enterAction: any
 }
 
-const STORAGE_KEY = 'lightning-box-data'
+const DB_DOC_ID = 'lightning-box-data'
 
 const DEFAULT_CATEGORIES: Category[] = [
   { id: 'software', name: '软件', shortcuts: [] },
@@ -35,30 +35,56 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2)
 }
 
-function loadData(): { categories: Category[], wallpaper: string } {
+async function loadData(): Promise<{ categories: Category[], wallpaper: string }> {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) return JSON.parse(stored)
-  } catch {}
+    const doc = await window.ztools.db.get(DB_DOC_ID)
+    if (doc) return doc.data
+  } catch (error) {
+    console.error('加载数据失败:', error)
+  }
   return { categories: DEFAULT_CATEGORIES, wallpaper: '' }
 }
 
-function saveData(data: { categories: Category[], wallpaper: string }) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+async function saveData(data: { categories: Category[], wallpaper: string }) {
+  try {
+    const existingDoc = await window.ztools.db.get(DB_DOC_ID)
+    const doc = {
+      _id: DB_DOC_ID,
+      _rev: existingDoc?._rev,
+      data: data
+    }
+    await window.ztools.db.put(doc)
+  } catch (error) {
+    console.error('保存数据失败:', error)
+  }
 }
 
 export default function Favorites({ enterAction }: FavoritesProps) {
-  const [data, setData] = useState<{ categories: Category[], wallpaper: string }>(loadData)
+  const [data, setData] = useState<{ categories: Category[], wallpaper: string }>({ categories: DEFAULT_CATEGORIES, wallpaper: '' })
   const [activeCategory, setActiveCategory] = useState('software')
   const [searchQuery, setSearchQuery] = useState('')
   const [showAddModal, setShowAddModal] = useState<{ categoryId: string, shortcut?: Shortcut } | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, shortcut: Shortcut, categoryId: string } | null>(null)
   const [draggedItem, setDraggedItem] = useState<{ shortcutId: string, categoryId: string } | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [initialized, setInitialized] = useState(false)
 
   const { categories, wallpaper } = data
 
-  useEffect(() => { saveData(data) }, [data])
+  // 初始化时加载数据
+  useEffect(() => {
+    loadData().then(initialData => {
+      setData(initialData)
+      setInitialized(true)
+    })
+  }, [])
+
+  // 数据变化时自动保存
+  useEffect(() => { 
+    if (initialized) {
+      saveData(data)
+    }
+  }, [data, initialized])
 
   const getIcon = (type: ShortcutType) => {
     switch (type) {
