@@ -7,6 +7,8 @@ interface Services {
   writeTextFile: (text: string) => string
   writeImageFile: (base64Url: string) => string | undefined
   launchApp: (appPath: string) => boolean
+  launchAppWithArgs: (appPath: string, args: string[]) => boolean
+  runAsAdmin: (cmd: string) => boolean
   getAppIcon: (exePath: string) => string | null
 }
 

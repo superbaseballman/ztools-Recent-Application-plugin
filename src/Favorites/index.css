@@ -3,6 +3,8 @@
   padding: 16px;
   position: relative;
   background: #1a1a2e !important;
+  background-size: cover !important;
+  background-position: center !important;
 }
 
 .lightning-app::before {
@@ -13,7 +15,13 @@
   right: 0;
   bottom: 0;
   background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4));
-  z-index: -1;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.lightning-app > * {
+  position: relative;
+  z-index: 1;
 }
 
 .settings-btn {
@@ -305,9 +313,25 @@
   color: rgba(255,255,255,0.4);
 }
 
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-size: 13px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: auto;
+  margin: 0;
+}
+
 .path-input {
   display: flex;
   gap: 8px;
+  margin-bottom: 12px;
 }
 
 .path-input input {

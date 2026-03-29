@@ -29,6 +29,22 @@ window.services = {
       return false
     }
   },
+  launchAppWithArgs(appPath, args) {
+    try {
+      spawn(appPath, args, { detached: true, shell: true })
+      return true
+    } catch (err) {
+      return false
+    }
+  },
+  runAsAdmin(cmd) {
+    try {
+      spawn('cmd', ['/c', cmd], { detached: true, shell: true })
+      return true
+    } catch (err) {
+      return false
+    }
+  },
   getAppIcon(exePath) {
     try {
       const tempDir = path.join(window.ztools.getPath('temp'), 'icons')

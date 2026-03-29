@@ -9,6 +9,9 @@ interface Shortcut {
   path: string
   type: ShortcutType
   icon?: string
+  params?: string
+  runAsAdmin?: boolean
+  description?: string
   categoryName?: string
 }
 
@@ -96,9 +99,9 @@ export default function Favorites({ enterAction }: FavoritesProps) {
     }
   }
 
-  const handleAddShortcut = (type: ShortcutType, name: string, path: string, icon?: string) => {
+  const handleAddShortcut = (type: ShortcutType, name: string, path: string, icon?: string, params?: string, runAsAdmin?: boolean, description?: string) => {
     if (!showAddModal || !name.trim() || !path.trim()) return
-    const newShortcut: Shortcut = { id: generateId(), name: name.trim(), path: path.trim(), type, icon }
+    const newShortcut: Shortcut = { id: generateId(), name: name.trim(), path: path.trim(), type, icon, params, runAsAdmin, description }
     if (showAddModal.shortcut) {
       setData({
         ...data,
@@ -135,7 +138,21 @@ export default function Favorites({ enterAction }: FavoritesProps) {
   }
 
   const handleLaunch = (shortcut: Shortcut) => {
-    window.ztools.shellOpenPath(shortcut.path)
+    if (shortcut.type === 'exe') {
+      const args = shortcut.params ? shortcut.params.split(' ').filter(Boolean) : []
+      if (shortcut.runAsAdmin) {
+        const cmd = args.length 
+          ? `runas /user:Administrator "${shortcut.path}" ${args.join(' ')}`
+          : `runas /user:Administrator "${shortcut.path}"`
+        window.services?.runAsAdmin(cmd)
+      } else if (args.length && window.services?.launchAppWithArgs) {
+        window.services.launchAppWithArgs(shortcut.path, args)
+      } else {
+        window.ztools.shellOpenPath(shortcut.path)
+      }
+    } else {
+      window.ztools.shellOpenPath(shortcut.path)
+    }
   }
 
   const handleDelete = (categoryId: string, shortcutId: string) => {
@@ -307,7 +324,7 @@ export default function Favorites({ enterAction }: FavoritesProps) {
 function AddShortcutModal({ category, shortcut, onAdd, onSelectFile, onClose }: {
   category: Category
   shortcut?: Shortcut
-  onAdd: (type: ShortcutType, name: string, path: string, icon?: string) => void
+  onAdd: (type: ShortcutType, name: string, path: string, icon?: string, params?: string, runAsAdmin?: boolean, description?: string) => void
   onSelectFile: (type: ShortcutType) => Promise<{ path: string, icon?: string } | null>
   onClose: () => void
 }) {
@@ -315,6 +332,9 @@ function AddShortcutModal({ category, shortcut, onAdd, onSelectFile, onClose }: 
   const [name, setName] = useState(shortcut?.name || '')
   const [path, setPath] = useState(shortcut?.path || '')
   const [icon, setIcon] = useState(shortcut?.icon || '')
+  const [params, setParams] = useState(shortcut?.params || '')
+  const [runAsAdmin, setRunAsAdmin] = useState(shortcut?.runAsAdmin || false)
+  const [description, setDescription] = useState(shortcut?.description || '')
 
   const handleBrowse = async () => {
     const result = await onSelectFile(type)
@@ -357,8 +377,20 @@ function AddShortcutModal({ category, shortcut, onAdd, onSelectFile, onClose }: 
           </div>
         )}
 
+        {type === 'exe' && (
+          <>
+            <input type="text" placeholder="启动参数（可选）" value={params} onChange={e => setParams(e.target.value)} />
+            <label className="checkbox-label">
+              <input type="checkbox" checked={runAsAdmin} onChange={e => setRunAsAdmin(e.target.checked)} />
+              以管理员权限运行
+            </label>
+          </>
+        )}
+
+        <input type="text" placeholder="描述（可选）" value={description} onChange={e => setDescription(e.target.value)} />
+
         <div className="modal-actions">
-          <button className="primary" onClick={() => onAdd(type, name, path, icon)}>确定</button>
+          <button className="primary" onClick={() => onAdd(type, name, path, icon, params, runAsAdmin, description)}>确定</button>
           <button onClick={onClose}>取消</button>
         </div>
       </div>
