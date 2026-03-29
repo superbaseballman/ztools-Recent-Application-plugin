@@ -6,6 +6,8 @@ interface Services {
   readFile: (file: string) => string
   writeTextFile: (text: string) => string
   writeImageFile: (base64Url: string) => string | undefined
+  launchApp: (appPath: string) => boolean
+  getAppIcon: (exePath: string) => string | null
 }
 
 declare global {

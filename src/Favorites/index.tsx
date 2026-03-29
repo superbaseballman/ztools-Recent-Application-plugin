@@ -8,6 +8,7 @@ interface Shortcut {
   name: string
   path: string
   type: ShortcutType
+  icon?: string
   categoryName?: string
 }
 
@@ -95,9 +96,9 @@ export default function Favorites({ enterAction }: FavoritesProps) {
     }
   }
 
-  const handleAddShortcut = (type: ShortcutType, name: string, path: string) => {
+  const handleAddShortcut = (type: ShortcutType, name: string, path: string, icon?: string) => {
     if (!showAddModal || !name.trim() || !path.trim()) return
-    const newShortcut: Shortcut = { id: generateId(), name: name.trim(), path: path.trim(), type }
+    const newShortcut: Shortcut = { id: generateId(), name: name.trim(), path: path.trim(), type, icon }
     if (showAddModal.shortcut) {
       setData({
         ...data,
@@ -118,11 +119,19 @@ export default function Favorites({ enterAction }: FavoritesProps) {
     setShowAddModal(null)
   }
 
-  const handleSelectFile = (type: ShortcutType) => {
+  const handleSelectFile = async (type: ShortcutType) => {
     if (type === 'url') return null
     const props: any = type === 'folder' ? ['openDirectory'] : ['openFile']
     const files = window.ztools.showOpenDialog({ title: '选择文件', properties: props })
-    return files?.[0] || null
+    const filePath = files?.[0]
+    if (!filePath) return null
+    
+    let icon: string | undefined
+    if (type === 'exe' && window.services?.getAppIcon) {
+      icon = await window.services.getAppIcon(filePath)
+    }
+    
+    return { path: filePath, icon }
   }
 
   const handleLaunch = (shortcut: Shortcut) => {
@@ -242,7 +251,7 @@ export default function Favorites({ enterAction }: FavoritesProps) {
                 onClick={() => handleLaunch(s)}
                 onContextMenu={e => handleContextMenu(e, s, s.categoryName ? categories.find(c => c.name === s.categoryName)?.id || '' : '')}
               >
-                <div className="shortcut-icon">{getIcon(s.type)}</div>
+                {s.icon ? <img src={s.icon} alt="" className="shortcut-img" /> : <div className="shortcut-icon">{getIcon(s.type)}</div>}
                 <div className="shortcut-name">{s.name}</div>
               </div>
             ))}
@@ -261,7 +270,7 @@ export default function Favorites({ enterAction }: FavoritesProps) {
                 onClick={() => handleLaunch(s)}
                 onContextMenu={e => handleContextMenu(e, s, currentCategory.id)}
               >
-                <div className="shortcut-icon">{getIcon(s.type)}</div>
+                {s.icon ? <img src={s.icon} alt="" className="shortcut-img" /> : <div className="shortcut-icon">{getIcon(s.type)}</div>}
                 <div className="shortcut-name">{s.name}</div>
               </div>
             ))}
@@ -298,20 +307,22 @@ export default function Favorites({ enterAction }: FavoritesProps) {
 function AddShortcutModal({ category, shortcut, onAdd, onSelectFile, onClose }: {
   category: Category
   shortcut?: Shortcut
-  onAdd: (type: ShortcutType, name: string, path: string) => void
-  onSelectFile: (type: ShortcutType) => string | null
+  onAdd: (type: ShortcutType, name: string, path: string, icon?: string) => void
+  onSelectFile: (type: ShortcutType) => Promise<{ path: string, icon?: string } | null>
   onClose: () => void
 }) {
   const [type, setType] = useState<ShortcutType>(shortcut?.type || 'exe')
   const [name, setName] = useState(shortcut?.name || '')
   const [path, setPath] = useState(shortcut?.path || '')
+  const [icon, setIcon] = useState(shortcut?.icon || '')
 
-  const handleBrowse = () => {
-    const selectedPath = onSelectFile(type)
-    if (selectedPath) {
-      setPath(selectedPath)
+  const handleBrowse = async () => {
+    const result = await onSelectFile(type)
+    if (result) {
+      setPath(result.path)
+      if (result.icon) setIcon(result.icon)
       if (!name) {
-        const fileName = selectedPath.split(/[/\\]/).pop() || ''
+        const fileName = result.path.split(/[/\\]/).pop() || ''
         setName(fileName.replace(/\.[^.]+$/, ''))
       }
     }
@@ -331,6 +342,12 @@ function AddShortcutModal({ category, shortcut, onAdd, onSelectFile, onClose }: 
 
         <input type="text" placeholder="名称" value={name} onChange={e => setName(e.target.value)} />
 
+        {icon && (
+          <div style={{ textAlign: 'center', marginBottom: 12 }}>
+            <img src={icon} alt="icon" style={{ width: 48, height: 48 }} />
+          </div>
+        )}
+
         {type === 'url' ? (
           <input type="text" placeholder="网址" value={path} onChange={e => setPath(e.target.value)} />
         ) : (
@@ -341,7 +358,7 @@ function AddShortcutModal({ category, shortcut, onAdd, onSelectFile, onClose }: 
         )}
 
         <div className="modal-actions">
-          <button className="primary" onClick={() => onAdd(type, name, path)}>确定</button>
+          <button className="primary" onClick={() => onAdd(type, name, path, icon)}>确定</button>
           <button onClick={onClose}>取消</button>
         </div>
       </div>
